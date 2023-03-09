@@ -48,8 +48,24 @@ class Education(Institution):
 
 
 @dataclass
-class Interest(Institution):
-    title = None
+class InterestTemplate:
+    name: str = None
+    url: str = None
+    followers: str = None
+
+
+@dataclass
+class Interest:
+    companies: list
+    schools: list
+    top_voices: list
+    groups: list
+
+    def __init__(self):
+        self.companies = []
+        self.schools = []
+        self.top_voices = []
+        self.groups = []
 
 
 @dataclass
@@ -94,7 +110,6 @@ class Scraper:
             )
         )
 
-
     def is_signed_in(self):
         try:
             WebDriverWait(self.driver, self.WAIT_FOR_ELEMENT_TIMEOUT).until(
@@ -113,23 +128,29 @@ class Scraper:
         return False
 
     def scroll_to_half(self):
-        self.driver.execute_script(
-            "window.scrollTo(0, Math.ceil(document.body.scrollHeight/2));"
-        )
+        try:
+            self.driver.execute_script(
+                "window.scrollTo(0, Math.ceil(document.body.scrollHeight/2));"
+            )
+        except:
+            pass
 
     def scroll_to_bottom(self):
-        self.driver.execute_script(
-            "window.scrollTo(0, document.body.scrollHeight);"
-        )
+        try:
+            self.driver.execute_script(
+                "window.scrollTo(0, document.body.scrollHeight);"
+            )
+        except:
+            pass
 
-    def scroll_class_name_element_to_page_percent(self, class_name:str, page_percent:float):
+    def scroll_class_name_element_to_page_percent(self, class_name: str, page_percent: float):
         self.driver.execute_script(
             f'elem = document.getElementsByClassName("{class_name}")[0]; elem.scrollTo(0, elem.scrollHeight*{str(page_percent)});'
         )
 
     def __find_element_by_class_name__(self, class_name):
         try:
-            self.driver.find_element_by_class_name(class_name)
+            self.driver.find_element(By.CLASS_NAME, class_name)
             return True
         except:
             pass
@@ -137,7 +158,7 @@ class Scraper:
 
     def __find_element_by_xpath__(self, tag_name):
         try:
-            self.driver.find_element(By.XPATH,tag_name)
+            self.driver.find_element(By.XPATH, tag_name)
             return True
         except:
             pass
@@ -145,7 +166,7 @@ class Scraper:
 
     def __find_enabled_element_by_xpath__(self, tag_name):
         try:
-            elem = self.driver.find_element(By.XPATH,tag_name)
+            elem = self.driver.find_element(By.XPATH, tag_name)
             return elem.is_enabled()
         except:
             pass

@@ -54,7 +54,7 @@ class Job(Scraper):
         self.focus()
         self.job_title = self.wait_for_element_to_load(name="jobs-unified-top-card__job-title").text.strip()
         self.company = self.wait_for_element_to_load(name="jobs-unified-top-card__company-name").text.strip()
-        self.company_linkedin_url = self.wait_for_element_to_load(name="jobs-unified-top-card__company-name").find_element_by_tag_name("a").get_attribute("href")
+        self.company_linkedin_url = self.wait_for_element_to_load(name="jobs-unified-top-card__company-name").find_element(By.TAG_NAME, "a").get_attribute("href")
         self.location = self.wait_for_element_to_load(name="jobs-unified-top-card__bullet").text.strip()
         self.posted_date = self.wait_for_element_to_load(name="jobs-unified-top-card__posted-date").text.strip()
         self.applicant_count = self.wait_for_element_to_load(name="jobs-unified-top-card__applicant-count").text.strip()
