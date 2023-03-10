@@ -16,6 +16,13 @@ class Contact:
     occupation: str = None
     url: str = None
 
+    def __repr__(self) -> dict:
+        return {
+            "name": self.name,
+            "occupation": self.occupation,
+            "url": self.url
+        }
+
 
 @dataclass
 class Institution:
@@ -28,6 +35,18 @@ class Institution:
     company_size: int = None
     founded: int = None
 
+    def __repr__(self) -> dict:
+        return {
+            "institution_name": self.institution_name,
+            "linkedin_url": self.linkedin_url,
+            "website": self.website,
+            "industry": self.industry,
+            "type": self.type,
+            "headquarters": self.headquarters,
+            "company_size": self.company_size,
+            "founded": self.founded
+        }
+
 
 @dataclass
 class Experience(Institution):
@@ -38,6 +57,20 @@ class Experience(Institution):
     duration: str = None
     location: str = None
 
+    def __repr__(self) -> dict:
+        result = super().__repr__()
+        result.update(
+            {
+                "from_date": self.from_date,
+                "to_date": self.to_date,
+                "description": self.description,
+                "position_title": self.position_title,
+                "duration": self.duration,
+                "location": self.location
+            }
+        )
+        return result
+
 
 @dataclass
 class Education(Institution):
@@ -46,12 +79,29 @@ class Education(Institution):
     description: str = None
     degree: str = None
 
+    def __repr__(self) -> dict:
+        result = super().__repr__()
+        result.update({
+            "from_date": self.from_date,
+            "to_date": self.to_date,
+            "description": self.description,
+            "degree": self.degree
+        })
+        return result
+
 
 @dataclass
 class InterestTemplate:
     name: str = None
     url: str = None
     followers: str = None
+
+    def __repr__(self) -> dict:
+        return {
+            "name": self.name,
+            "url": self.url,
+            "followers": self.followers
+        }
 
 
 @dataclass
@@ -67,11 +117,31 @@ class Interest:
         self.top_voices = []
         self.groups = []
 
+    def __repr__(self) -> dict:
+        return {
+            "companies": [com.__repr__() for com in self.companies],
+            "schools": [sch.__repr__() for sch in self.schools],
+            "top_voices": [top.__repr__() for top in self.top_voices],
+            "groups": [grp.__repr__() for grp in self.groups]
+        }
+
 
 @dataclass
 class Accomplishment(Institution):
     category = None
     title = None
+
+    def __repr__(self) -> dict:
+        result = super().__repr__()
+        result.update(
+            {
+                "category": self.category,
+                "title": self.title
+            }
+        )
+        return result
+
+
 
 
 @dataclass

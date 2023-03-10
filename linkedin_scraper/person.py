@@ -7,6 +7,7 @@ import os
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.support import expected_conditions
+import json
 
 ignored_exceptions = (NoSuchElementException, StaleElementReferenceException)
 
@@ -40,7 +41,6 @@ class Person(Scraper):
         self.experiences = experiences or []
         self.educations = educations or []
         self.interest = Interest or None
-        self.interests = interests or []
         self.accomplishments = accomplishments or []
         self.also_viewed_urls = []
         self.contacts = contacts or []
@@ -236,7 +236,7 @@ class Person(Scraper):
         self.wait(3)
         main_list = WebDriverWait(self.driver, 10, ignored_exceptions=ignored_exceptions) \
             .until(expected_conditions.presence_of_all_elements_located((
-             By.XPATH, "//section[contains(@id,'ember')]")))
+            By.XPATH, "//section[contains(@id,'ember')]")))
         for item_ in main_list:
             if item_.text.startswith("Education"):
                 temp_list = item_.find_elements(By.XPATH, 'div')
@@ -327,7 +327,7 @@ class Person(Scraper):
         self.wait(2)
         buttons = WebDriverWait(self.driver, 10, ignored_exceptions=ignored_exceptions) \
             .until(expected_conditions.presence_of_all_elements_located((
-             By.XPATH, "//button[contains(@class,'artdeco-tab')]")))
+            By.XPATH, "//button[contains(@class,'artdeco-tab')]")))
         my_buttons = []
         for button in buttons:
             if 'Companies' in button.text or 'Groups' in button.text or \
@@ -485,12 +485,13 @@ class Person(Scraper):
             return None
 
     def __repr__(self):
-        return "{name}\n\nAbout\n{about}\n\nExperience\n{exp}\n\nEducation\n{edu}\n\nInterest\n{int}\n\nAccomplishments\n{acc}\n\nContacts\n{conn}".format(
-            name=self.name,
-            about=self.about,
-            exp=self.experiences,
-            edu=self.educations,
-            int=self.interests,
-            acc=self.accomplishments,
-            conn=self.contacts,
-        )
+        return json.dumps({
+            "name": self.name,
+            "about": self.about,
+            "experiences": [exp.__repr__() for exp in self.experiences],
+            "educations": [edu.__repr__() for edu in self.educations],
+            "interest": self.interest.__repr__(),
+            "accomplishments": [acc.__repr__() for acc in self.accomplishments],
+            "contacts": [con.__repr__() for con in self.contacts],
+        })
+
