@@ -321,9 +321,18 @@ class Company(Scraper):
             driver.close()
 
     def __repr__(self):
-        _output = {'name': self.name, 'about_us': self.about_us, 'specialties': self.specialties,
-                   'website': self.website, 'industry': self.industry, 'company_type': self.name,
-                   'headquarters': self.headquarters, 'company_size': self.company_size, 'founded': self.founded,
-                   'affiliated_companies': self.affiliated_companies, 'employees': self.employees,
-                   'headcount': self.headcount}
+        _output = {
+            'name': self.name,
+            'about_us': self.about_us,
+            'specialties': self.specialties,
+            'website': self.website,
+            'industry': self.industry,
+            'company_type': self.name,
+            'headquarters': self.headquarters,
+            'company_size': self.company_size,
+            'founded': self.founded,
+            'affiliated_companies': self.affiliated_companies,
+            'employees': self.employees,
+            'headcount': self.headcount
+        }
         return json.dumps(_output).replace('\n', '')

@@ -1,8 +1,5 @@
 from .objects import Scraper
-from . import constants as c
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 
 class Job(Scraper):
@@ -37,29 +34,48 @@ class Job(Scraper):
         if scrape:
             self.scrape(close_on_complete)
 
-    def __repr__(self):
-        return f"{self.job_title} {self.company}"
+    def __repr__(self) -> dict:
+        return {
+            "linkedin_url": self.linkedin_url,
+            "job_title": self.job_title,
+            "company": self.company,
+            "company_linkedin_url": self.company_linkedin_url,
+            "location": self.location,
+            "posted_date": self.posted_date,
+            "applicant_count": self.applicant_count,
+            "job_description": self.job_description,
+            "benefits": self.benefits
+        }
 
     def scrape(self, close_on_complete=True):
         if self.is_signed_in():
             self.scrape_logged_in(close_on_complete=close_on_complete)
         else:
-            raise NotImplemented("This part is not implemented yet")
+            return
 
+    def get_element_text(self, by=By.CLASS_NAME, value='', seconds=2, base=None):
+        element = self.get_elements_by_time(by=by, value=value, seconds=seconds, base=base)
+        if element:
+            return element.text.strip()
+        else:
+            return ""
 
     def scrape_logged_in(self, close_on_complete=True):
         driver = self.driver
-        
         driver.get(self.linkedin_url)
         self.focus()
-        self.job_title = self.wait_for_element_to_load(name="jobs-unified-top-card__job-title").text.strip()
-        self.company = self.wait_for_element_to_load(name="jobs-unified-top-card__company-name").text.strip()
-        self.company_linkedin_url = self.wait_for_element_to_load(name="jobs-unified-top-card__company-name").find_element(By.TAG_NAME, "a").get_attribute("href")
-        self.location = self.wait_for_element_to_load(name="jobs-unified-top-card__bullet").text.strip()
-        self.posted_date = self.wait_for_element_to_load(name="jobs-unified-top-card__posted-date").text.strip()
-        self.applicant_count = self.wait_for_element_to_load(name="jobs-unified-top-card__applicant-count").text.strip()
-        self.job_description = self.wait_for_element_to_load(name="jobs-description").text.strip()
-        self.benefits = self.wait_for_element_to_load(name="jobs-unified-description__salary-main-rail-card").text.strip()
+        element = self.get_elements_by_time(single=True, value="jobs-unified-top-card__job-title")
+        if element is None:
+            return
+        self.job_title = self.get_element_text(value='jobs-unified-top-card__job-title')
+        self.company = self.get_element_text(value="jobs-unified-top-card__company-name")
+        self.company_linkedin_url = self.wait_for_element_to_load(name="jobs-unified-top-card__company-name")\
+            .find_element(By.TAG_NAME, "a").get_attribute("href")
+        self.location = self.get_element_text(value="jobs-unified-top-card__bullet")
+        self.posted_date = self.get_element_text(value="jobs-unified-top-card__posted-date")
+        self.applicant_count = self.get_element_text(value="jobs-unified-top-card__applicant-count")
+        self.job_description = self.get_element_text(value="jobs-description")
+        self.benefits = self.get_element_text(value="jobs-unified-description__salary-main-rail-card")
 
         if close_on_complete:
             driver.close()

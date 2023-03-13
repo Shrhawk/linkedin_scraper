@@ -116,19 +116,11 @@ class Person(Scraper):
         main = self.wait_for_element_to_load(by=By.ID, name="main")
         self.scroll_to_half()
         self.scroll_to_bottom()
-        WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH,
-                                                                                  "//section[contains(@id,'ember')]")))
-        self.wait(3)
-        main_list = WebDriverWait(self.driver, 10, ignored_exceptions=ignored_exceptions) \
-            .until(expected_conditions.presence_of_all_elements_located((By.XPATH, "//section[contains(@id,'ember')]")))
+        self.wait(5)
+        main_list = self.get_elements_by_time(by=By.XPATH, value="//section[contains(@id,'ember')]",
+                                              seconds=10, base=self.driver, single=False)
+        experience_list = []
         for item_ in main_list:
-            """
-            items = item.find_elements(By.XPATH, "div[contains(@class,'pvs-header__container')]")
-            if len(items) is 0:
-                continue
-            elif "Experience" not in items[0].text:
-                continue
-            """
             if item_.text.startswith("Experience"):
                 temp_list = item_.find_elements(By.XPATH, 'div')
                 for item in temp_list:
@@ -142,6 +134,7 @@ class Person(Scraper):
                         ).find_elements(
                             By.XPATH, 'li'
                         )
+        work_times = ""
         for position in experience_list:
             if position.find_element(By.XPATH, 'div').get_attribute('class') == '':
                 position = position.find_element(By.XPATH, 'div')
@@ -153,6 +146,9 @@ class Person(Scraper):
             position_summary_text = position_details_list[1] if len(position_details_list) > 1 else None
             position_summary_details = position_summary_details.find_element(By.XPATH, 'div')
             outer_positions = position_summary_details.find_elements(By.XPATH, '*')
+            company = ''
+            location = ''
+            position_title = ''
             if len(outer_positions) == 4:
                 position_title = outer_positions[0].find_element(By.TAG_NAME, "span").find_element(By.TAG_NAME,
                                                                                                    "span").text
@@ -176,6 +172,7 @@ class Person(Scraper):
             duration = work_times.split("·")[1].strip() if len(work_times.split("·")) > 1 else None
             from_date = " ".join(times.split(" ")[:2]) if times else ""
             to_date = " ".join(times.split(" ")[3:]) if times else ""
+
             if position_summary_text and len(
                     position_summary_text.find_element(
                         By.CLASS_NAME, "pvs-list").find_element(
@@ -230,13 +227,10 @@ class Person(Scraper):
         main = self.wait_for_element_to_load(by=By.ID, name="main")
         self.scroll_to_half()
         self.scroll_to_bottom()
-        WebDriverWait(self.driver, 10).until(
-            EC.presence_of_element_located((
-                By.XPATH, "//section[contains(@id,'ember')]")))
-        self.wait(3)
-        main_list = WebDriverWait(self.driver, 10, ignored_exceptions=ignored_exceptions) \
-            .until(expected_conditions.presence_of_all_elements_located((
-            By.XPATH, "//section[contains(@id,'ember')]")))
+        self.wait(5)
+        main_list = self.get_elements_by_time(by=By.XPATH, value="//section[contains(@id,'ember')]",
+                                              seconds=10, base=self.driver, single=False)
+        education_list = []
         for item_ in main_list:
             if item_.text.startswith("Education"):
                 temp_list = item_.find_elements(By.XPATH, 'div')
@@ -325,9 +319,8 @@ class Person(Scraper):
         self.scroll_to_half()
         self.scroll_to_bottom()
         self.wait(2)
-        buttons = WebDriverWait(self.driver, 10, ignored_exceptions=ignored_exceptions) \
-            .until(expected_conditions.presence_of_all_elements_located((
-            By.XPATH, "//button[contains(@class,'artdeco-tab')]")))
+        buttons = self.get_elements_by_time(by=By.XPATH, value="//button[contains(@class,'artdeco-tab')]",
+                                            seconds=10, base=self.driver, single=False)
         my_buttons = []
         for button in buttons:
             if 'Companies' in button.text or 'Groups' in button.text or \
@@ -494,4 +487,3 @@ class Person(Scraper):
             "accomplishments": [acc.__repr__() for acc in self.accomplishments],
             "contacts": [con.__repr__() for con in self.contacts],
         })
-

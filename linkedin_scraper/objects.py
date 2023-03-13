@@ -142,8 +142,6 @@ class Accomplishment(Institution):
         return result
 
 
-
-
 @dataclass
 class Scraper:
     driver: Chrome = None
@@ -157,6 +155,23 @@ class Scraper:
     def focus(self):
         self.driver.execute_script('alert("Focus window")')
         self.driver.switch_to.alert.accept()
+
+    def get_elements_by_time(self, by=By.CLASS_NAME, value='', seconds=5, base=None, single=True):
+        counter = 0
+        if base is None:
+            base = self.driver
+        while counter < seconds:
+            elements = base.find_elements(by=by, value=value)
+            if len(elements) == 0:
+                pass
+            else:
+                if single:
+                    return elements[0]
+                else:
+                    return elements
+            counter = counter + 1
+            self.wait(1)
+        return None
 
     def wait_for_element_to_load(self, by=By.CLASS_NAME, name="pv-top-card", base=None):
         base = base or self.driver
