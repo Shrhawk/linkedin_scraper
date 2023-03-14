@@ -53,13 +53,6 @@ class Job(Scraper):
         else:
             return
 
-    def get_element_text(self, by=By.CLASS_NAME, value='', seconds=2, base=None):
-        element = self.get_elements_by_time(by=by, value=value, seconds=seconds, base=base)
-        if element:
-            return element.text.strip()
-        else:
-            return ""
-
     def scrape_logged_in(self, close_on_complete=True):
         driver = self.driver
         driver.get(self.linkedin_url)
@@ -76,6 +69,5 @@ class Job(Scraper):
         self.applicant_count = self.get_element_text(value="jobs-unified-top-card__applicant-count")
         self.job_description = self.get_element_text(value="jobs-description")
         self.benefits = self.get_element_text(value="jobs-unified-description__salary-main-rail-card")
-
         if close_on_complete:
             driver.close()

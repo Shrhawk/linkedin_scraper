@@ -45,9 +45,17 @@ class JobSearch(Scraper):
         job_div = self.wait_for_element_to_load(name="job-card-list__title", base=base_element)
         job_title = job_div.text.strip()
         linkedin_url = job_div.get_attribute("href")
-        company = base_element.find_element(By.CLASS_NAME, "job-card-container__primary-description")
-        location = base_element.find_element(By.CLASS_NAME, "job-card-container__metadata-item")
-        job = Job(linkedin_url=linkedin_url, job_title=job_title,
+        company = self.get_element_text(by=By.CLASS_NAME, value="job-card-container__primary-description",
+                                        seconds=2, base=base_element)
+        company_linkedin_url = None
+        try:
+            company_linkedin_url = base_element.find_element(By.CLASS_NAME, "job-card-container__primary-description") \
+                .find_element(By.XPATH, 'a').get_attribute('href')
+        except:
+            pass
+        location = self.get_element_text(by=By.CLASS_NAME, value="job-card-container__metadata-item",
+                                         seconds=2, base=base_element)
+        job = Job(linkedin_url=linkedin_url, job_title=job_title, company_linkedin_url=company_linkedin_url,
                   company=company, location=location, scrape=False, driver=self.driver)
         return job
 
@@ -73,9 +81,9 @@ class JobSearch(Scraper):
         return
 
     def scrape_job_card_search(self, base_element) -> Job:
-        job_div = base_element.find_element(By.XPATH, 'div')\
-            .find_element(By.XPATH, 'div')\
-            .find_element(By.XPATH, 'div')\
+        job_div = base_element.find_element(By.XPATH, 'div') \
+            .find_element(By.XPATH, 'div') \
+            .find_element(By.XPATH, 'div') \
             .find_elements(By.XPATH, 'div')[1]
         job_data = job_div.find_elements(By.XPATH, 'div')
         job_title = job_data[0].text
@@ -114,5 +122,5 @@ class JobSearch(Scraper):
                 job = self.scrape_job_card_search(job_card)
                 job_results.append(job)
             except Exception as e1:
-                print(f"Exception -> "+str(e1))
+                print(f"Exception -> " + str(e1))
         return [job.__repr__() for job in job_results]

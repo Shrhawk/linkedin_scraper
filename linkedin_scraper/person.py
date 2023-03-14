@@ -321,6 +321,8 @@ class Person(Scraper):
         self.wait(2)
         buttons = self.get_elements_by_time(by=By.XPATH, value="//button[contains(@class,'artdeco-tab')]",
                                             seconds=10, base=self.driver, single=False)
+        if buttons is None:
+            return
         my_buttons = []
         for button in buttons:
             if 'Companies' in button.text or 'Groups' in button.text or \

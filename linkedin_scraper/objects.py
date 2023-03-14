@@ -173,6 +173,13 @@ class Scraper:
             self.wait(1)
         return None
 
+    def get_element_text(self, by=By.CLASS_NAME, value='', seconds=3, base=None):
+        element = self.get_elements_by_time(by=by, value=value, seconds=seconds, base=base)
+        if element:
+            return element.text.strip()
+        else:
+            return ""
+
     def wait_for_element_to_load(self, by=By.CLASS_NAME, name="pv-top-card", base=None):
         base = base or self.driver
         return WebDriverWait(base, self.WAIT_FOR_ELEMENT_TIMEOUT).until(
