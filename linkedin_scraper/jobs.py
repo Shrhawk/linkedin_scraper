@@ -1,5 +1,10 @@
 from .objects import Scraper
+from selenium import webdriver
 from selenium.webdriver.common.by import By
+import os
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from linkedin_scraper import actions
 
 
 class Job(Scraper):
@@ -31,7 +36,23 @@ class Job(Scraper):
         self.job_description = job_description
         self.benefits = benefits
 
+        if driver is None:
+            try:
+                if os.getenv("CHROMEDRIVER") is None:
+                    driver_path = os.path.join(os.path.dirname(__file__), 'drivers/chromedriver')
+                else:
+                    driver_path = os.getenv("CHROMEDRIVER")
+
+                options = Options()
+                # options.add_argument('--headless')
+                # options.add_argument('--disable-gpu')
+                options.add_argument('start-maximized')
+                self.driver = webdriver.Chrome(service=Service(driver_path), chrome_options=options)
+            except:
+                self.driver = webdriver.Chrome()
+
         if scrape:
+            actions.load_cookies(driver=self.driver)
             self.scrape(close_on_complete)
 
     def __repr__(self) -> dict:
@@ -70,4 +91,4 @@ class Job(Scraper):
         self.job_description = self.get_element_text(value="jobs-description")
         self.benefits = self.get_element_text(value="jobs-unified-description__salary-main-rail-card")
         if close_on_complete:
-            driver.close()
+            self.driver.close()

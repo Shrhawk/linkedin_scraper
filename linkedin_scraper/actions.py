@@ -19,7 +19,7 @@ def page_has_loaded(driver):
     return page_state == 'complete'
 
 
-def login(driver, email=None, password=None, cookie=None, timeout=10):
+def load_cookies(driver):
     driver.get('https://www.linkedin.com/')
     if os.path.isfile(c.COOKIE_FILE_NAME):
         with open(c.COOKIE_FILE_NAME, 'rb') as file:
@@ -27,21 +27,30 @@ def login(driver, email=None, password=None, cookie=None, timeout=10):
             for cookie in cookies:
                 driver.add_cookie(cookie)
             driver.get('https://www.linkedin.com/feed/')
-            while driver.current_url == 'https://www.linkedin.com/feed/':
-                element = driver.find_elements(By.CLASS_NAME, c.VERIFY_LOGIN_ID)
-                if len(element) > 0:
-                    return
-                sleep(3)
+            sleep(2)
+
+
+def login(driver, email=None, password=None, cookie=None, timeout=10):
+
+    load_cookies(driver=driver)
+    counter = 0
+    while driver.current_url == 'https://www.linkedin.com/feed/' and counter < 5:
+        element = driver.find_elements(By.CLASS_NAME, c.VERIFY_LOGIN_ID)
+        if len(element) > 0:
+            return
+        counter = counter + 1
+        sleep(3)
 
     if not email or not password:
         email, password = __prompt_email_password()
 
     driver.get("https://www.linkedin.com/login")
-    element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "username")))
 
-    email_elem = driver.find_element(By.ID, "username")
-    email_elem.send_keys(email)
-
+    try:
+        email_elem = driver.find_element(By.ID, "username")
+        email_elem.send_keys(email)
+    except:
+        pass
     password_elem = driver.find_element(By.ID, "password")
     password_elem.send_keys(password)
     password_elem.submit()
@@ -51,7 +60,14 @@ def login(driver, email=None, password=None, cookie=None, timeout=10):
         if remember:
             remember.submit()
 
-    element = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, c.VERIFY_LOGIN_ID)))
+    counters = 0
+    while counters < timeout:
+        sleep(1)
+        element = driver.find_elements(By.CLASS_NAME, c.VERIFY_LOGIN_ID)
+        if len(element) == 0:
+            pass
+        else:
+            break
     pickle.dump(driver.get_cookies(), open(c.COOKIE_FILE_NAME, 'wb'))
 
 def _login_with_cookie(driver, cookie):

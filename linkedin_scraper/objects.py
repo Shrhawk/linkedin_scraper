@@ -156,7 +156,7 @@ class Scraper:
         self.driver.execute_script('alert("Focus window")')
         self.driver.switch_to.alert.accept()
 
-    def get_elements_by_time(self, by=By.CLASS_NAME, value='', seconds=5, base=None, single=True):
+    def get_elements_by_time(self, by=By.CLASS_NAME, value='', seconds=5, base=None, single=True, element_count=None):
         counter = 0
         if base is None:
             base = self.driver
@@ -167,8 +167,11 @@ class Scraper:
             else:
                 if single:
                     return elements[0]
-                else:
+                elif element_count is None:
                     return elements
+                else:
+                    if len(elements) > element_count + 1:
+                        return elements
             counter = counter + 1
             self.wait(1)
         return None

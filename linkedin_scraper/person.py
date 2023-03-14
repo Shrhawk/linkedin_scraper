@@ -6,8 +6,9 @@ from .objects import Experience, Education, Scraper, Interest, Accomplishment, C
 import os
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
-from selenium.webdriver.support import expected_conditions
-import json
+from linkedin_scraper import actions
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 
 ignored_exceptions = (NoSuchElementException, StaleElementReferenceException)
 
@@ -53,15 +54,19 @@ class Person(Scraper):
                     )
                 else:
                     driver_path = os.getenv("CHROMEDRIVER")
-
-                self.driver = webdriver.Chrome(driver_path)
+                options = Options()
+                # options.add_argument('--headless')
+                # options.add_argument('--disable-gpu')
+                options.add_argument('start-maximized')
+                self.driver = webdriver.Chrome(service=Service(driver_path), chrome_options=options)
             except:
                 self.driver = webdriver.Chrome()
 
         if get:
             self.driver.get(linkedin_url)
-
         if scrape:
+            actions.login(self.driver)
+            self.driver.get(linkedin_url)
             self.scrape(close_on_complete)
 
     def add_about(self, about):
@@ -320,7 +325,7 @@ class Person(Scraper):
         self.scroll_to_bottom()
         self.wait(2)
         buttons = self.get_elements_by_time(by=By.XPATH, value="//button[contains(@class,'artdeco-tab')]",
-                                            seconds=10, base=self.driver, single=False)
+                                            seconds=10, base=self.driver, single=False, element_count=3)
         if buttons is None:
             return
         my_buttons = []
@@ -455,7 +460,7 @@ class Person(Scraper):
             connections = None
 
         if close_on_complete:
-            driver.quit()
+            self.driver.quit()
 
     @property
     def company(self):
@@ -479,8 +484,8 @@ class Person(Scraper):
         else:
             return None
 
-    def __repr__(self):
-        return json.dumps({
+    def __repr__(self) -> dict:
+        return {
             "name": self.name,
             "about": self.about,
             "experiences": [exp.__repr__() for exp in self.experiences],
@@ -488,4 +493,4 @@ class Person(Scraper):
             "interest": self.interest.__repr__(),
             "accomplishments": [acc.__repr__() for acc in self.accomplishments],
             "contacts": [con.__repr__() for con in self.contacts],
-        })
+        }

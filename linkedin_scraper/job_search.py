@@ -4,19 +4,43 @@ from time import sleep
 import urllib.parse
 from .objects import Scraper
 from .jobs import Job
+from selenium import webdriver
 from selenium.webdriver.common.by import By
+import os
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from linkedin_scraper import actions
 
 
 class JobSearch(Scraper):
     AREAS = ["recommended_jobs", None, "still_hiring", "more_jobs"]
+    signed_in = False
 
-    def __init__(self, driver, base_url="https://www.linkedin.com/jobs/", close_on_complete=False,
+    def __init__(self, driver=None, base_url="https://www.linkedin.com/jobs/", close_on_complete=False,
                  scrape=True, scrape_recommended_jobs=True):
         super().__init__()
         self.driver = driver
         self.base_url = base_url
 
+        if driver is None:
+            try:
+                if os.getenv("CHROMEDRIVER") is None:
+                    driver_path = os.path.join(os.path.dirname(__file__), 'drivers/chromedriver')
+                else:
+                    driver_path = os.getenv("CHROMEDRIVER")
+
+                options = Options()
+                # options.add_argument('--headless')
+                # options.add_argument('--disable-gpu')
+                options.add_argument('start-maximized')
+                self.driver = webdriver.Chrome(service=Service(driver_path), chrome_options=options)
+                if self.is_signed_in():
+                    self.signed_in = True
+            except:
+                self.driver = webdriver.Chrome()
+
         if scrape:
+            actions.load_cookies(self.driver)
             self.scrape(close_on_complete, scrape_recommended_jobs)
 
     def __repr__(self) -> dict:
@@ -39,7 +63,7 @@ class JobSearch(Scraper):
         if self.is_signed_in():
             self.scrape_logged_in(close_on_complete=close_on_complete, scrape_recommended_jobs=scrape_recommended_jobs)
         else:
-            raise NotImplemented("This part is not implemented yet")
+            return
 
     def scrape_job_card(self, base_element) -> Job:
         job_div = self.wait_for_element_to_load(name="job-card-list__title", base=base_element)
@@ -77,7 +101,7 @@ class JobSearch(Scraper):
                     area_results.append(job)
                 setattr(self, area_name, area_results)
         if close_on_complete:
-            driver.quit()
+            self.driver.quit()
         return
 
     def scrape_job_card_search(self, base_element) -> Job:
@@ -98,7 +122,13 @@ class JobSearch(Scraper):
                   scrape=False, driver=self.driver)
         return job
 
-    def search(self, search_term: str) -> List[dict]:
+    def search(self, search_term: str, close_on_complete=False) -> List[dict]:
+        if self.signed_in:
+            return self.logged_in_search(search_term=search_term, close_on_complete=close_on_complete)
+        else:
+            return self.with_out_login_search(search_term=search_term, close_on_complete=close_on_complete)
+
+    def logged_in_search(self, search_term: str, close_on_complete=False) -> List[dict]:
         url = os.path.join(self.base_url, "search") + f"?keywords={urllib.parse.quote(search_term)}&refresh=true"
         self.driver.get(url)
         self.scroll_to_bottom()
@@ -123,4 +153,46 @@ class JobSearch(Scraper):
                 job_results.append(job)
             except Exception as e1:
                 print(f"Exception -> " + str(e1))
+        if close_on_complete:
+            self.driver.quit()
         return [job.__repr__() for job in job_results]
+
+    def with_out_login_search(self, search_term: str, close_on_complete=False) -> List[dict]:
+        url = os.path.join(self.base_url, "search") + f"?keywords={urllib.parse.quote(search_term)}&refresh=true"
+        self.driver.get(url)
+        self.scroll_to_bottom()
+        sleep(self.WAIT_FOR_ELEMENT_TIMEOUT)
+        self.scroll_to_half()
+        self.scroll_to_bottom()
+        sleep(self.WAIT_FOR_ELEMENT_TIMEOUT)
+        self.focus()
+        sleep(self.WAIT_FOR_ELEMENT_TIMEOUT)
+        job_list_ul = self.get_elements_by_time(by=By.CLASS_NAME, value="jobs-search__results-list",
+                                                seconds=5, single=True)
+        job_list_li = self.get_elements_by_time(by=By.XPATH, value='li', seconds=5,
+                                                base=job_list_ul, single=False)
+        job_results = []
+        for job_div in job_list_li:
+            try:
+                job_div = job_div.find_element(By.XPATH, 'div')
+                linkedin_url = job_div.find_element(By.XPATH, 'a').get_attribute('href')
+                job_div = job_div.find_elements(By.XPATH, 'div')[1]
+                job_title = self.get_element_text(by=By.XPATH, value='h3', seconds=5, base=job_div)
+                company_div = job_div.find_element(By.XPATH, 'h4').find_element(By.XPATH, 'a')
+                company = company_div.text
+                company_linkedin_url = company_div.get_attribute('href')
+                location = job_div.find_element(By.XPATH, 'div').find_element(By.XPATH, 'span').text
+
+                job = Job(linkedin_url=linkedin_url, job_title=job_title, company_linkedin_url=company_linkedin_url,
+                          company=company, location=location, scrape=False, driver=self.driver)
+                job_results.append(job)
+            except Exception as e1:
+                pass
+
+        if close_on_complete:
+            self.driver.quit()
+
+        return [job.__repr__() for job in job_results]
+
+
+

@@ -1,17 +1,17 @@
 import datetime
-
-import requests
-from lxml import html
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from .objects import Scraper
-from .person import Person
 import time
 import os
 import json
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from linkedin_scraper import actions
+from selenium.webdriver import ActionChains
 
 AD_BANNER_CLASSNAME = ('ad-banner-container', '__ad')
 
@@ -82,6 +82,7 @@ class Company(Scraper):
         self.specialties = specialties
         self.showcase_pages = showcase_pages
         self.affiliated_companies = affiliated_companies
+        self.driver = driver
 
         if driver is None:
             try:
@@ -90,14 +91,16 @@ class Company(Scraper):
                 else:
                     driver_path = os.getenv("CHROMEDRIVER")
 
-                driver = webdriver.Chrome(driver_path)
+                options = Options()
+                # options.add_argument('--headless')
+                # options.add_argument('--disable-gpu')
+                options.add_argument('start-maximized')
+                self.driver = webdriver.Chrome(service=Service(driver_path), chrome_options=options)
             except:
-                driver = webdriver.Chrome()
-
-        driver.get(linkedin_url)
-        self.driver = driver
-
+                self.driver = webdriver.Chrome()
         if scrape:
+            actions.load_cookies(driver=self.driver)
+            self.driver.get(linkedin_url)
             self.scrape(get_employees=get_employees, close_on_complete=close_on_complete)
 
     def __get_text_under_subtitle(self, elem):
@@ -267,7 +270,7 @@ class Company(Scraper):
             self.employees = self.get_employees()
         driver.get(self.linkedin_url)
         if close_on_complete:
-            driver.close()
+            self.driver.close()
 
     def scrape_not_logged_in(self, close_on_complete=True, retry_limit=10, get_employees=True):
         driver = self.driver
@@ -275,15 +278,38 @@ class Company(Scraper):
         while self.is_signed_in() and retry_times <= retry_limit:
             page = driver.get(self.linkedin_url)
             retry_times = retry_times + 1
-        self.name = driver.find_element(By.CLASS_NAME, "name").text.strip()
-        self.about_us = driver.find_element(By.CLASS_NAME, "basic-info-description").text.strip()
-        self.specialties = self.__get_text_under_subtitle_by_class(driver, "specialties")
-        self.website = self.__get_text_under_subtitle_by_class(driver, "website")
-        self.headquarters = driver.find_element(By.CLASS_NAME, "adr").text.strip()
-        self.industry = driver.find_element(By.CLASS_NAME, "industry").text.strip()
-        self.company_size = driver.find_element(By.CLASS_NAME, "company-size").text.strip()
-        self.company_type = self.__get_text_under_subtitle_by_class(driver, "type")
-        self.founded = self.__get_text_under_subtitle_by_class(driver, "founded")
+        try:
+            but = self.get_elements_by_time(by=By.XPATH,
+                                            value="//button[contains(@class,'contextual-sign-in-modal__modal-dismiss')]",
+                                            single=True)
+            action = ActionChains(self.driver)
+            action.click(but)
+            action.perform()
+
+        except:
+            pass
+        self.name = self.get_element_text(by=By.XPATH, value="//h1[contains(@class,'top-card-layout__title')]")
+        container = self.get_elements_by_time(by=By.XPATH,
+                                              value="//div[contains(@class,'core-section-container__content')]")
+        self.about_us = container.find_element(By.XPATH, 'p').text
+
+        container = container.find_element(By.XPATH, 'dl')
+        containers = container.find_elements(By.XPATH, 'div')
+        for item in containers:
+            data = item.text.replace("\n", " ")
+            if "Website" in data:
+                self.website = data.replace("Website", "").strip()
+            elif "Company size" in data:
+                self.company_size = data.replace("Company size", "").strip()
+            elif "Headquarters" in data:
+                self.headquarters = data.replace("Headquarters", "").strip()
+            elif "Type" in data:
+                self.company_type = data.replace("Type", "").strip()
+            elif "Founded" in data:
+                self.founded = data.replace("Founded", "").strip()
+            elif "Specialties" in data:
+                self.specialties = data.replace("Specialties", "").strip()
+
         # get showcase
         try:
             driver.find_element(By.ID, "view-other-showcase-pages-dialog").click()
