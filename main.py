@@ -1,7 +1,8 @@
 import json
 
-from linkedin_scraper import Person, Company, Job, JobSearch
+from linkedin_scraper import Person, Company, Job, JobSearch, PersonSearchScrap, actions
 from typing import List
+from urllib.parse import urljoin
 import pandas as pd
 
 import json
@@ -63,14 +64,48 @@ def get_job_searches_data(keywords: List[str]):
         result = j.search(word)
         jobs_data.append(result)
     j.driver.quit()
-
-    with open('get_job_searches_data.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['name', 'age', 'subject_name', 'subject_marks'])
-
-    df = pd.read_json(json.dumps(jobs_data))
-    df.to_csv("get_job_searches_data.csv")
     return jobs_data
 
 
-results = get_job_searches_data(["computer Science", "Math Master"])
+class RequestModelSearchPerson:
+    first_name: str
+    last_name: str or None
+
+
+def search_persons_data(search_data: List[dict]):
+    results = []
+    j = PersonSearchScrap(close_on_complete=True)
+    for item in search_data:
+        result_data = j.search(first_name=item["first_name"], last_name=item["last_name"],
+                               location=item["location"], keywords=item["keywords"], limit=item["limit"])
+        if result_data is not None:
+            results.append({
+                "first_name": item["first_name"],
+                "last_name": item["last_name"],
+                "location": item["location"],
+                "keywords": item["keywords"],
+                "limit": len(result_data),
+                "results": result_data
+            })
+    return results
+
+
+search_keywords = [
+    {
+        "first_name": "",
+        "last_name": "",
+        "location": "lahore",
+        "keywords": "python developer",
+        "limit": 20
+    },
+    {
+        "first_name": "",
+        "last_name": "",
+        "location": "lahore",
+        "keywords": "freelancer",
+        "limit": 30
+    }
+]
+
+result = search_persons_data(search_keywords)
+print("OK")

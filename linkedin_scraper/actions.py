@@ -30,6 +30,10 @@ def load_cookies(driver):
             sleep(2)
 
 
+def save_cookies(driver):
+    pickle.dump(driver.get_cookies(), open(c.COOKIE_FILE_NAME, 'wb'))
+
+
 def login(driver, email=None, password=None, cookie=None, timeout=10):
 
     load_cookies(driver=driver)
@@ -68,7 +72,7 @@ def login(driver, email=None, password=None, cookie=None, timeout=10):
             pass
         else:
             break
-    pickle.dump(driver.get_cookies(), open(c.COOKIE_FILE_NAME, 'wb'))
+    save_cookies(driver)
 
 def _login_with_cookie(driver, cookie):
     driver.get("https://www.linkedin.com/login")

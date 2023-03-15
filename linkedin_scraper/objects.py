@@ -25,6 +25,22 @@ class Contact:
 
 
 @dataclass
+class PersonSearch:
+    link: str = None
+    name: str = None
+    description: str = None
+    location: str = None
+
+    def __repr__(self) -> dict:
+        return {
+            "link": self.link,
+            "name": self.name,
+            "description": self.description,
+            "location": self.location
+        }
+
+
+@dataclass
 class Institution:
     institution_name: str = None
     linkedin_url: str = None
