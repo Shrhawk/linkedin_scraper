@@ -1,6 +1,7 @@
 import json
 
-from linkedin_scraper import Person, Company, Job, JobSearch, PersonSearchScrap, actions
+from linkedin_scraper import Person, Company, Job, JobSearch, PersonSearchScrap, actions,\
+    JobSearchScrap, ExperienceLevel, OnSite, JobType
 from typing import List
 from urllib.parse import urljoin
 import pandas as pd
@@ -61,8 +62,8 @@ def get_job_searches_data(keywords: List[str]):
     jobs_data = []
     j = JobSearch(close_on_complete=False, scrape=False)
     for word in keywords:
-        result = j.search(word)
-        jobs_data.append(result)
+        result_ = j.search(word)
+        jobs_data.append(result_)
     j.driver.quit()
     return jobs_data
 
@@ -90,22 +91,44 @@ def search_persons_data(search_data: List[dict]):
     return results
 
 
+def search_jobs_data(search_data: List[dict]):
+    results = []
+    j = JobSearchScrap(close_on_complete=True)
+    for item in search_data:
+        result_data = j.search(
+            keywords=item.get("keywords", None),
+            location=item.get("location", None),
+            refresh=item.get("refresh", True),
+            past_date_seconds=item.get("past_date_seconds", None),
+            experience_level=item.get("experience_level", None),
+            company_name=item.get("company_name", None),
+            job_type=item.get("job_type", None),
+            on_site=item.get("on_site", None),
+            limit=item.get("limit", None)
+        )
+
+        if result_data is not None:
+            item.update({
+                "limit": len(result_data),
+                "results": result_data
+            })
+            results.append(item)
+    return results
+
+
 search_keywords = [
     {
-        "first_name": "",
-        "last_name": "",
-        "location": "lahore",
         "keywords": "python developer",
-        "limit": 20
-    },
-    {
-        "first_name": "",
-        "last_name": "",
-        "location": "lahore",
-        "keywords": "freelancer",
-        "limit": 30
+        "location": "Lahore, Punjab, Pakistan",
+        "refresh": None,
+        "past_date_seconds": 2592000,
+        "experience_level": [ExperienceLevel.entry_level, ExperienceLevel.mid_senior_level],
+        "company_name": ["Turing"],
+        "job_type": [JobType.full_time, JobType.part_time],
+        "on_site": [OnSite.on_site, OnSite.remote],
+        "limit": 100
     }
 ]
+result = search_jobs_data(search_keywords)
 
-result = search_persons_data(search_keywords)
 print("OK")

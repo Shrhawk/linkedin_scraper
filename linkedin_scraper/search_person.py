@@ -1,16 +1,10 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from .objects import Scraper, PersonSearch
 import os
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import StaleElementReferenceException
 from linkedin_scraper import actions
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-
-ignored_exceptions = (NoSuchElementException, StaleElementReferenceException)
 
 
 class PersonSearchScrap(Scraper):
@@ -64,8 +58,9 @@ class PersonSearchScrap(Scraper):
         self.first_name = first_name
         self.last_name = last_name
         self.location = location
-        self.limit = limit
         self.keywords = keywords
+        self.limit = limit
+
         if self.logged_in:
             return self.scrape_logged_in()
         else:
@@ -111,7 +106,6 @@ class PersonSearchScrap(Scraper):
         except:
             pass
 
-
         while True:
             page = page + 1
             self.linkedin_url = "https://www.linkedin.com/search/results/people/?firstName=" \
@@ -119,13 +113,7 @@ class PersonSearchScrap(Scraper):
                                 f"&page={page}" \
                                 f"&keywords={self.keywords.strip()}{loc}"
             self.driver.get(self.linkedin_url)
-
-            test_elem_text = self.get_element_text(by=By.XPATH,
-                                                   value="//ul[contains(@class,'reusable-search__entity-result-list')]")
-            if self.location.strip() in test_elem_text.lower():
-                pass
-            else:
-                continue
+            self.wait(1)
             self.scroll_to_half()
             self.scroll_to_bottom()
             li = self.get_elements_by_time(by=By.CLASS_NAME, value="reusable-search__result-container",

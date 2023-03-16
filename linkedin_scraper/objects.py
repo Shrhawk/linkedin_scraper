@@ -41,6 +41,24 @@ class PersonSearch:
 
 
 @dataclass
+class JobsSearch:
+    job_title: str = None
+    job_link: str = None
+    company_name: str = None
+    company_link: str = None
+    job_location: str = None
+
+    def __repr__(self) -> dict:
+        return {
+            "job_title": self.job_title,
+            "job_link": self.job_link,
+            "company_name": self.company_name,
+            "company_link": self.company_link,
+            "job_location": self.job_location
+        }
+
+
+@dataclass
 class Institution:
     institution_name: str = None
     linkedin_url: str = None
@@ -238,19 +256,31 @@ class Scraper:
             pass
         return False
 
-    def scroll_to_half(self):
+    def scroll_to_half(self, class_name: str or None = None):
         try:
-            self.driver.execute_script(
-                "window.scrollTo(0, Math.ceil(document.body.scrollHeight/2));"
-            )
+            if class_name:
+                self.driver.execute_script(
+                    f"my_div = document.getElementsByClassName('{class_name}')[0];"
+                    f"my_div.scrollTo(0,my_div.scrollHeight);"
+                )
+            else:
+                self.driver.execute_script(
+                    "window.scrollTo(0, Math.ceil(document.body.scrollHeight/2));"
+                )
         except:
             pass
 
-    def scroll_to_bottom(self):
+    def scroll_to_bottom(self, class_name: str or None = None):
         try:
-            self.driver.execute_script(
-                "window.scrollTo(0, document.body.scrollHeight);"
-            )
+            if class_name:
+                self.driver.execute_script(
+                    f"my_div = document.getElementsByClassName('{class_name}')[0];"
+                    f"my_div.scrollTo(0,my_div.scrollHeight);"
+                )
+            else:
+                self.driver.execute_script(
+                    "window.scrollTo(0, document.body.scrollHeight);"
+                )
         except:
             pass
 
