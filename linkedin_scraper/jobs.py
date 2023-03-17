@@ -11,7 +11,7 @@ class Job(Scraper):
 
     def __init__(
         self,
-        linkedin_url=None,
+        linkedin_url: str or None = None,
         job_title=None,
         company=None,
         company_linkedin_url=None,
@@ -25,7 +25,7 @@ class Job(Scraper):
         scrape=True,
     ):
         super().__init__()
-        self.linkedin_url = linkedin_url
+        self.linkedin_url = linkedin_url.split("?")[0] if linkedin_url else linkedin_url
         self.job_title = job_title
         self.driver = driver
         self.company = company

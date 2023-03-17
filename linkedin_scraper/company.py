@@ -25,8 +25,8 @@ class CompanySummary(object):
     name = None
     followers = None
 
-    def __init__(self, linkedin_url=None, name=None, followers=None):
-        self.linkedin_url = linkedin_url
+    def __init__(self, linkedin_url: str or None = None, name=None, followers=None):
+        self.linkedin_url = linkedin_url.split("?")[0] if linkedin_url else linkedin_url
         self.name = name
         self.followers = followers
 

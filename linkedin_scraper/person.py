@@ -19,7 +19,7 @@ class Person(Scraper):
 
     def __init__(
             self,
-            linkedin_url=None,
+            linkedin_url: str or None = None,
             name=None,
             about=None,
             experiences=None,
@@ -36,7 +36,7 @@ class Person(Scraper):
             time_to_wait_after_login=0,
     ):
         self.location = None
-        self.linkedin_url = linkedin_url
+        self.linkedin_url = linkedin_url.split("?")[0] if linkedin_url else linkedin_url
         self.name = name
         self.about = about or []
         self.experiences = experiences or []
@@ -95,16 +95,6 @@ class Person(Scraper):
             self.scrape_logged_in(close_on_complete=close_on_complete)
         else:
             print("you are not logged in!")
-
-    def _click_see_more_by_class_name(self, class_name):
-        try:
-            _ = WebDriverWait(self.driver, self.__WAIT_FOR_ELEMENT_TIMEOUT).until(
-                EC.presence_of_element_located((By.CLASS_NAME, class_name))
-            )
-            div = self.driver.find_element(By.CLASS_NAME, class_name)
-            div.find_element(By.TAG_NAME, "button").click()
-        except Exception as e:
-            pass
 
     def is_open_to_work(self):
         try:

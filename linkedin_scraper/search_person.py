@@ -5,6 +5,7 @@ import os
 from linkedin_scraper import actions
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from .api_calls import linkedin_scrapper_api_calls as link_api
 
 
 class PersonSearchScrap(Scraper):
@@ -69,53 +70,24 @@ class PersonSearchScrap(Scraper):
     def scrape_logged_in(self):
         page = 0
         persons = []
-        loc = ""
-        try:
-            self.linkedin_url = "https://www.linkedin.com/search/results/people/?firstName=" \
-                                f"{self.first_name.strip()}&lastName={self.last_name.strip()}" \
-                                f"&page={1}" \
-                                f"&keywords={self.keywords.strip()}"
-            self.driver.get(self.linkedin_url)
-            but = self.get_elements_by_time(by=By.XPATH,
-                                            value="//button[contains(@class,'search-reusables__filter-pill-button')]",
-                                            base=self.driver, single=False,
-                                            seconds=5, element_count=3)[2]
-            but.click()
-            input_field = self.driver.find_element(By.XPATH,
-                                                   "//div[contains(@class,'search-basic-typeahead')]").find_element(
-                By.XPATH, "input"
-            )
-            input_field.send_keys(self.location)
 
-            self.wait(2)
-            but = self.get_elements_by_time(by=By.XPATH,
-                                            value="//div[contains(@class,'basic-typeahead__triggered-content')]")
-            but.click()
-
-            but = self.driver.find_elements(By.XPATH,
-                                            "//div[contains(@class,'reusable-search-filters-buttons')]")[1]
-            but = but.find_elements(By.XPATH, 'button')[1]
-            but.click()
-            self.wait(2)
-
-            url = self.driver.current_url
-            url_data = url.split("&")
-            for url_x in url_data:
-                if "geoUrn" in url_x:
-                    loc = f"&{url_x}"
-        except:
-            pass
-
+        if self.location:
+            geo_data = link_api.get_geo_location_ids_by_name_search(name=self.location)
+            if len(geo_data) > 0:
+                self.location = geo_data[0].get("id", "")
+            else:
+                self.location = ""
         while True:
             page = page + 1
             self.linkedin_url = "https://www.linkedin.com/search/results/people/?firstName=" \
                                 f"{self.first_name.strip()}&lastName={self.last_name.strip()}" \
                                 f"&page={page}" \
-                                f"&keywords={self.keywords.strip()}{loc}"
+                                f"&keywords={self.keywords.strip()}&geoUrn={self.location}"
             self.driver.get(self.linkedin_url)
-            self.wait(1)
+            self.wait(5)
             self.scroll_to_half()
             self.scroll_to_bottom()
+            self.wait(2)
             li = self.get_elements_by_time(by=By.CLASS_NAME, value="reusable-search__result-container",
                                            seconds=5, single=False)
             if li is None or len(li) == 0:
@@ -135,8 +107,7 @@ class PersonSearchScrap(Scraper):
                 except:
                     pass
                 p = PersonSearch(link=link, name=name, description=description, location=location)
-                if self.location.strip().lower() in p.location.lower():
-                    persons.append(p)
+                persons.append(p)
                 if self.limit is None:
                     pass
                 else:
@@ -165,11 +136,8 @@ class PersonSearchScrap(Scraper):
             item = item.find_element(By.XPATH, 'div')
             location = item.find_element(By.XPATH, 'p').text
             p = PersonSearch(link=link, name=name, description=description, location=location)
-            if self.location.strip().lower() in p.location.lower():
-                persons.append(p)
-            if self.limit is None:
-                pass
-            else:
+            persons.append(p)
+            if self.limit:
                 if len(persons) >= self.limit:
                     return [p.__repr__() for p in persons]
         return [p.__repr__() for p in persons]

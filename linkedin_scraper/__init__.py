@@ -7,6 +7,7 @@ from .job_search import JobSearch
 from .search_person import PersonSearchScrap
 from .search_job import JobSearchScrap
 from .list_classes import ExperienceLevel, JobType, OnSite
+from . import api_calls
 
 __version__ = "2.11.0"
 
