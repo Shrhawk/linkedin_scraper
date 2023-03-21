@@ -36,7 +36,7 @@ class JobSearch(Scraper):
                 self.driver = webdriver.Chrome(service=Service(driver_path), chrome_options=options)
                 if self.is_signed_in():
                     self.signed_in = True
-            except:
+            except Exception as e:
                 self.driver = webdriver.Chrome()
 
         if scrape:
@@ -75,7 +75,7 @@ class JobSearch(Scraper):
         try:
             company_linkedin_url = base_element.find_element(By.CLASS_NAME, "job-card-container__primary-description") \
                 .find_element(By.XPATH, 'a').get_attribute('href')
-        except:
+        except Exception as e:
             pass
         location = self.get_element_text(by=By.CLASS_NAME, value="job-card-container__metadata-item",
                                          seconds=2, base=base_element)

@@ -129,13 +129,22 @@ class InterestTemplate:
     name: str = None
     url: str = None
     followers: str = None
+    description: str = None
 
     def __repr__(self) -> dict:
-        return {
+        data = {
             "name": self.name,
-            "url": self.url,
-            "followers": self.followers
+            "url": self.url
         }
+        if self.followers:
+            data.update({
+                "followers": self.followers
+            })
+        if self.description:
+            data.update({
+                "description": self.description
+            })
+        return data
 
 
 @dataclass
@@ -144,10 +153,12 @@ class Interest:
     schools: list
     top_voices: list
     groups: list
+    news_letters: list
 
     def __init__(self):
         self.companies = []
         self.schools = []
+        self.news_letters = []
         self.top_voices = []
         self.groups = []
 
@@ -156,7 +167,8 @@ class Interest:
             "companies": [com.__repr__() for com in self.companies],
             "schools": [sch.__repr__() for sch in self.schools],
             "top_voices": [top.__repr__() for top in self.top_voices],
-            "groups": [grp.__repr__() for grp in self.groups]
+            "groups": [grp.__repr__() for grp in self.groups],
+            "news_letters": [let.__repr__() for let in self.news_letters]
         }
 
 
@@ -267,7 +279,35 @@ class Scraper:
                 self.driver.execute_script(
                     "window.scrollTo(0, Math.ceil(document.body.scrollHeight/2));"
                 )
-        except:
+        except Exception as e:
+            pass
+
+    def scroll_to_top(self, class_name: str or None = None):
+        try:
+            if class_name:
+                self.driver.execute_script(
+                    f"my_div = document.getElementsByClassName('{class_name}')[0];"
+                    f"my_div.scrollTo(0,0);"
+                )
+            else:
+                self.driver.execute_script(
+                    "window.scrollTo(0, 0);"
+                )
+        except Exception as e:
+            pass
+
+    def get_document_height(self, class_name: str or None = None):
+        try:
+            if class_name:
+                return self.driver.execute_script(
+                    f"my_div = document.getElementsByClassName('{class_name}')[0];"
+                    f"return my_div.scrollHeight;"
+                )
+            else:
+                return self.driver.execute_script(
+                    "return document.body.scrollHeight;"
+                )
+        except Exception as e:
             pass
 
     def scroll_to_bottom(self, class_name: str or None = None):
@@ -281,7 +321,7 @@ class Scraper:
                 self.driver.execute_script(
                     "window.scrollTo(0, document.body.scrollHeight);"
                 )
-        except:
+        except Exception as e:
             pass
 
     def scroll_class_name_element_to_page_percent(self, class_name: str, page_percent: float):
@@ -293,7 +333,7 @@ class Scraper:
         try:
             self.driver.find_element(By.CLASS_NAME, class_name)
             return True
-        except:
+        except Exception as e:
             pass
         return False
 
@@ -301,7 +341,7 @@ class Scraper:
         try:
             self.driver.find_element(By.XPATH, tag_name)
             return True
-        except:
+        except Exception as e:
             pass
         return False
 
@@ -309,7 +349,7 @@ class Scraper:
         try:
             elem = self.driver.find_element(By.XPATH, tag_name)
             return elem.is_enabled()
-        except:
+        except Exception as e:
             pass
         return False
 

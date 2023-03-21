@@ -53,7 +53,7 @@ class JobSearchScrap(Scraper):
                 # options.add_argument('--disable-gpu')
                 options.add_argument('start-maximized')
                 self.driver = webdriver.Chrome(service=Service(driver_path), chrome_options=options)
-            except:
+            except Exception as e:
                 self.driver = webdriver.Chrome()
 
         if scrape:
@@ -108,6 +108,8 @@ class JobSearchScrap(Scraper):
             self.linkedin_url = f"{self.linkedin_url}&keywords={self.keywords}"
         if type(self.location) is str:
             self.linkedin_url = f"{self.linkedin_url}&geoId={self.location}"
+        if type(self.company_name) is str:
+            self.linkedin_url = f"{self.linkedin_url}&f_C={self.company_name}"
         if self.refresh:
             self.linkedin_url = f"{self.linkedin_url}&refresh={self.refresh}"
         if self.past_date_seconds:
@@ -115,8 +117,6 @@ class JobSearchScrap(Scraper):
         if self.experience_level:
             data = ",".join([str(li_cl.get_experience_level(exp)) for exp in self.experience_level])
             self.linkedin_url = f"{self.linkedin_url}&f_E={data}"
-        if type(self.company_name) is str:
-            self.linkedin_url = f"{self.linkedin_url}&f_c={self.company_name}"
         if self.job_type:
             data = ",".join([li_cl.get_job_type(job) for job in self.job_type])
             self.linkedin_url = f"{self.linkedin_url}&f_JT={data}"
@@ -142,28 +142,28 @@ class JobSearchScrap(Scraper):
             job_location = ""
             try:
                 job_title = job_details[0].text
-            except:
+            except Exception as e:
                 pass
             try:
                 job_link = job_details[0].find_element(By.XPATH, 'a').get_attribute("href")
-            except:
+            except Exception as e:
                 pass
             try:
                 company_name = job_details[1].text
-            except:
+            except Exception as e:
                 pass
             try:
                 company_link = job_details[1].find_element(By.XPATH, 'a').get_attribute("href")
-            except:
+            except Exception as e:
                 pass
             try:
                 job_location = job_details[2].text
-            except:
+            except Exception as e:
                 pass
             job = JobsSearch(job_title=job_title, job_link=job_link, company_name=company_name,
                              company_link=company_link, job_location=job_location)
             return job
-        except:
+        except Exception as e:
             return None
 
     def scrape_job_card_logout(self, item):
@@ -175,32 +175,32 @@ class JobSearchScrap(Scraper):
             job_location = ""
             try:
                 job_link = item.find_element(By.XPATH, '..').find_element(By.XPATH, 'a').get_attribute('href')
-            except:
+            except Exception as e:
                 try:
                     job_link = item.find_element(By.XPATH, '..').get_attribute('href')
-                except:
+                except Exception as e:
                     pass
                 pass
             try:
                 job_title = item.find_element(By.XPATH, 'h3').text
-            except:
+            except Exception as e:
                 pass
             try:
                 company_name = item.find_element(By.XPATH, 'h4').text
-            except:
+            except Exception as e:
                 pass
             try:
                 company_link = item.find_element(By.XPATH, 'h4').find_element(By.XPATH, 'a').get_attribute('href')
-            except:
+            except Exception as e:
                 pass
             try:
                 job_location = item.find_element(By.XPATH, 'div').find_element(By.XPATH, 'span').text
-            except:
+            except Exception as e:
                 pass
             job = JobsSearch(job_title=job_title, job_link=job_link, company_name=company_name,
                              company_link=company_link, job_location=job_location)
             return job
-        except:
+        except Exception as e:
             return None
 
     def scrape_logged_in(self):
@@ -211,6 +211,8 @@ class JobSearchScrap(Scraper):
             self.driver.get(f"{self.linkedin_url}"
                             f"&start={data_records}")
             self.wait(3)
+            if "No matching jobs found." in self.driver.find_element(By.XPATH, '//body').text:
+                return [j.__repr__() for j in job_results]
             self.scroll_to_half(class_name="jobs-search-results-list")
             self.scroll_to_bottom(class_name="jobs-search-results-list")
             self.wait(1)
@@ -237,6 +239,8 @@ class JobSearchScrap(Scraper):
 
         self.driver.get(f"{self.linkedin_url}")
         self.wait(3)
+        if "We couldn’t find \"" in self.driver.find_element(By.XPATH, "//body").text:
+            return [j.__repr__() for j in job_results]
         temp = self.driver.find_elements(By.XPATH, "//div[contains(@class,'base-search-card__info')]")
         update_time = datetime.datetime.now()
         while True:

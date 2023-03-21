@@ -1,13 +1,6 @@
-import json
-
 from linkedin_scraper import Person, Company, Job, JobSearch, PersonSearchScrap, actions,\
     JobSearchScrap, ExperienceLevel, OnSite, JobType
 from typing import List
-from urllib.parse import urljoin
-import pandas as pd
-
-import json
-import csv
 
 
 def get_person_data(linkedin_url: str):
@@ -77,17 +70,17 @@ def search_persons_data(search_data: List[dict]):
     results = []
     j = PersonSearchScrap(close_on_complete=True)
     for item in search_data:
-        result_data = j.search(first_name=item["first_name"], last_name=item["last_name"],
-                               location=item["location"], keywords=item["keywords"], limit=item["limit"])
-        if result_data is not None:
-            results.append({
-                "first_name": item["first_name"],
-                "last_name": item["last_name"],
-                "location": item["location"],
-                "keywords": item["keywords"],
-                "limit": len(result_data),
-                "results": result_data
-            })
+        result_data = j.search(
+            first_name=item.get("first_name", None),
+            last_name=item.get("last_name", None),
+            location=item.get("location", None),
+            keywords=item.get("keywords", None),
+            limit=item.get("limit", None))
+        item.update({
+            "limit": len(result_data),
+            "results": result_data
+        })
+        results.append(item)
     return results
 
 
@@ -106,29 +99,10 @@ def search_jobs_data(search_data: List[dict]):
             on_site=item.get("on_site", None),
             limit=item.get("limit", None)
         )
-
-        if result_data is not None:
-            item.update({
-                "limit": len(result_data),
-                "results": result_data
-            })
-            results.append(item)
+        item.update({
+            "limit": len(result_data),
+            "results": result_data
+        })
+        results.append(item)
     return results
 
-
-search_keywords = [
-    {
-        "keywords": "python developer",
-        "location": "Lahore, Punjab, Pakistan",
-        "refresh": None,
-        "past_date_seconds": 2592000,
-        "experience_level": [ExperienceLevel.entry_level, ExperienceLevel.mid_senior_level],
-        "company_name": ["Turing"],
-        "job_type": [JobType.full_time, JobType.part_time],
-        "on_site": [OnSite.on_site, OnSite.remote],
-        "limit": 100
-    }
-]
-result = search_jobs_data(search_keywords)
-
-print("OK")

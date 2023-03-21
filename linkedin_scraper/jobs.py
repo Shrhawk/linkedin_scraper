@@ -48,7 +48,7 @@ class Job(Scraper):
                 # options.add_argument('--disable-gpu')
                 options.add_argument('start-maximized')
                 self.driver = webdriver.Chrome(service=Service(driver_path), chrome_options=options)
-            except:
+            except Exception as e:
                 self.driver = webdriver.Chrome()
 
         if scrape:

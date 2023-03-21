@@ -3,11 +3,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
 from .objects import Scraper
 import time
 import os
-import json
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from linkedin_scraper import actions
@@ -64,12 +62,16 @@ class Company(Scraper):
                  company_type=None,
                  company_size=None,
                  specialties=None,
-                 showcase_pages=[],
-                 affiliated_companies=[],
+                 showcase_pages=None,
+                 affiliated_companies=None,
                  driver=None,
                  scrape=True,
                  get_employees=True,
                  close_on_complete=True):
+        if showcase_pages is None:
+            showcase_pages = []
+        if affiliated_companies is None:
+            affiliated_companies = []
         self.linkedin_url = linkedin_url
         self.name = name
         self.about_us = about_us
@@ -96,7 +98,7 @@ class Company(Scraper):
                 # options.add_argument('--disable-gpu')
                 options.add_argument('start-maximized')
                 self.driver = webdriver.Chrome(service=Service(driver_path), chrome_options=options)
-            except:
+            except Exception as e:
                 self.driver = webdriver.Chrome()
         if scrape:
             actions.load_cookies(driver=self.driver)
@@ -124,15 +126,15 @@ class Company(Scraper):
         try:
             employee_object['name'] = (employee_raw.text.split("\n") or [""])[0].strip()
             employee_object['designation'] = (employee_raw.text.split("\n") or [""])[1].strip()
-        except:
+        except Exception as e:
             pass
         try:
             employee_object['designation'] = (employee_raw.text.split("\n") or [""])[3].strip()
-        except:
+        except Exception as e:
             pass
         try:
             employee_object['linkedin_url'] = employee_raw.find_element(By.TAG_NAME, "a").get_attribute("href")
-        except:
+        except Exception as e:
             pass
         return employee_object
 
@@ -176,11 +178,10 @@ class Company(Scraper):
                 self.scroll_to_bottom()
                 self.wait(1)
                 temp = self.driver.find_elements(By.XPATH, "//li[contains(@class,'grid__col--lg-8')]")
-                if (datetime.datetime.now() - update_time).seconds > 10:
+                if (datetime.datetime.now() - update_time).seconds > wait_time:
                     break
         total = []
         list_css = "list-style-none"
-        next_xpath = '//button[@aria-label="Next"]'
         driver = self.driver
         results_list = driver.find_element(By.CLASS_NAME, list_css)
         results_li = results_list.find_elements(By.TAG_NAME, "li")
@@ -205,14 +206,14 @@ class Company(Scraper):
                 navigation.find_elements(By.XPATH, "//a[@data-control-name='page_member_main_nav_about_tab']"),
                 navigation.find_elements(By.XPATH, "//a[@data-control-name='org_about_module_see_all_view_link']"),
             ).click()
-        except:
+        except Exception as e:
             driver.get(os.path.join(self.linkedin_url, "about"))
         _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.TAG_NAME, 'section')))
         time.sleep(3)
         grid = driver.find_element(By.CLASS_NAME, "artdeco-card.p5.mb4")
-        descWrapper = grid.find_elements(By.TAG_NAME, "p")
-        if len(descWrapper) > 0:
-            self.about_us = descWrapper[0].text.strip()
+        desc_wrapper = grid.find_elements(By.TAG_NAME, "p")
+        if len(desc_wrapper) > 0:
+            self.about_us = desc_wrapper[0].text.strip()
         labels = grid.find_elements(By.TAG_NAME, "dt")
         values = grid.find_elements(By.TAG_NAME, "dd")
         num_attributes = min(len(labels), len(values))
@@ -264,7 +265,7 @@ class Company(Scraper):
                     followers=affiliated_company.find_element(By.CLASS_NAME, "company-followers-count").text.strip()
                 )
                 self.affiliated_companies.append(company_summary)
-        except:
+        except Exception as e:
             pass
         if get_employees:
             self.employees = self.get_employees()
@@ -276,17 +277,18 @@ class Company(Scraper):
         driver = self.driver
         retry_times = 0
         while self.is_signed_in() and retry_times <= retry_limit:
-            page = driver.get(self.linkedin_url)
+            driver.get(self.linkedin_url)
             retry_times = retry_times + 1
         try:
-            but = self.get_elements_by_time(by=By.XPATH,
-                                            value="//button[contains(@class,'contextual-sign-in-modal__modal-dismiss')]",
-                                            single=True)
+            but = self.get_elements_by_time(
+                by=By.XPATH,
+                value="//button[contains(@class,'contextual-sign-in-modal__modal-dismiss')]",
+                single=True)
             action = ActionChains(self.driver)
             action.click(but)
             action.perform()
 
-        except:
+        except Exception as e:
             pass
         self.name = self.get_element_text(by=By.XPATH, value="//h1[contains(@class,'top-card-layout__title')]")
         container = self.get_elements_by_time(by=By.XPATH,
@@ -324,7 +326,7 @@ class Company(Scraper):
                 )
                 self.showcase_pages.append(company_summary)
             driver.find_element(By.CLASS_NAME, "dialog-close").click()
-        except:
+        except Exception as e:
             pass
         # affiliated company
         try:
@@ -338,7 +340,7 @@ class Company(Scraper):
                     name=affiliated_page.text.strip()
                 )
                 self.affiliated_companies.append(company_summary)
-        except:
+        except Exception as e:
             pass
         if get_employees:
             self.employees = self.get_employees()
@@ -347,7 +349,7 @@ class Company(Scraper):
             driver.close()
 
     def __repr__(self):
-        _output = {
+        return {
             'name': self.name,
             'about_us': self.about_us,
             'specialties': self.specialties,
@@ -361,4 +363,3 @@ class Company(Scraper):
             'employees': self.employees,
             'headcount': self.headcount
         }
-        return json.dumps(_output).replace('\n', '')

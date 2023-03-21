@@ -1,3 +1,6 @@
+import datetime
+import random
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -59,7 +62,7 @@ class Person(Scraper):
                 # options.add_argument('--disable-gpu')
                 options.add_argument('start-maximized')
                 self.driver = webdriver.Chrome(service=Service(driver_path), chrome_options=options)
-            except:
+            except Exception as e:
                 self.driver = webdriver.Chrome()
 
         if get:
@@ -101,7 +104,7 @@ class Person(Scraper):
             return "#OPEN_TO_WORK" in self.driver.find_element(
                 By.CLASS_NAME, "pv-top-card-profile-picture").find_element(
                 By.TAG_NAME, "img").get_attribute("title")
-        except:
+        except Exception as e:
             return False
 
     def get_experiences(self):
@@ -278,7 +281,13 @@ class Person(Scraper):
             company_link = company_link.find_element(By.XPATH, 'a').get_attribute('href')
             company_details = company_details.find_element(By.XPATH, 'div')
             company_details = company_details.find_element(By.XPATH, 'a')
-            name = company_details.find_element(By.XPATH, 'div').text
+            name = company_details.find_element(By.XPATH, 'div').text.split('\n')[0]
+            description = ""
+            if interest_type == "Newsletters":
+                try:
+                    description = company_details.find_element(By.XPATH, 'span').find_element(By.XPATH, 'span').text
+                except Exception as e:
+                    pass
             if interest_type == "Top Voices":
                 followers = company_details.find_elements(By.XPATH, 'span')[1].text
             else:
@@ -287,9 +296,12 @@ class Person(Scraper):
                 followers = followers.split(' ')[0].replace(',', '')
             interest_temp = InterestTemplate(
                 name=name,
-                url=company_link,
-                followers=followers
+                url=company_link
             )
+            if description:
+                interest_temp.description = description
+            else:
+                interest_temp.followers = followers
             if interest_type == "Companies":
                 interest.companies.append(
                     interest_temp
@@ -300,6 +312,10 @@ class Person(Scraper):
                 )
             elif interest_type == "Schools":
                 interest.schools.append(
+                    interest_temp
+                )
+            elif interest_type == "Newsletters":
+                interest.news_letters.append(
                     interest_temp
                 )
             elif interest_type == "Top Voices":
@@ -321,39 +337,44 @@ class Person(Scraper):
         my_buttons = []
         for button in buttons:
             if 'Companies' in button.text or 'Groups' in button.text or \
-                    'Schools' in button.text or 'Top Voices' in button.text:
+                    'Schools' in button.text or 'Top Voices' or "Newsletters" in button.text:
                 my_buttons.append(button)
         data_list = self.driver.find_elements(By.CLASS_NAME, "pvs-list__container")
         interest = Interest()
         for item in data_list:
             tmp = item.find_element(By.XPATH, '..')
             self.driver.execute_script("arguments[0].setAttribute('class','artdeco-tabpanel active ember-view')", tmp)
-            self.scroll_to_bottom()
-            self.wait(2)
-        self.get_interest_type(
-            data_list[0] if 'Companies' in my_buttons[0].text else data_list[1] if 'Companies' in my_buttons[1].text
-            else data_list[2] if 'Companies' in my_buttons[2].text else None,
-            interest,
-            'Companies'
-        )
-        self.get_interest_type(
-            data_list[0] if 'Groups' in my_buttons[0].text else data_list[1] if 'Groups' in my_buttons[1].text
-            else data_list[2] if 'Groups' in my_buttons[2].text else None,
-            interest,
-            'Groups'
-        )
-        self.get_interest_type(
-            data_list[0] if 'Schools' in my_buttons[0].text else data_list[1] if 'Schools' in my_buttons[1].text
-            else data_list[2] if 'Schools' in my_buttons[2].text else None,
-            interest,
-            'Schools'
-        )
-        self.get_interest_type(
-            data_list[0] if 'Top Voices' in my_buttons[0].text else data_list[1] if 'Top Voices' in my_buttons[1].text
-            else data_list[2] if 'Top Voices' in my_buttons[2].text else None,
-            interest,
-            'Top Voices'
-        )
+            total_height = self.get_document_height()
+            while True:
+                self.scroll_to_half()
+                self.scroll_to_bottom()
+                self.wait(random.uniform(2.0, 3.0))
+                new_height = self.get_document_height()
+                if new_height == total_height:
+                    break
+                total_height = new_height
+        data_list = self.driver.find_elements(By.CLASS_NAME, "pvs-list__container")
+        for (my_but, data_li) in zip(my_buttons, data_list):
+            if "Companies" in my_but.text:
+                self.get_interest_type(
+                    company_list=data_li, interest=interest, interest_type='Companies'
+                )
+            elif "Groups" in my_but.text:
+                self.get_interest_type(
+                    company_list=data_li, interest=interest, interest_type='Groups'
+                )
+            elif "Schools" in my_but.text:
+                self.get_interest_type(
+                    company_list=data_li, interest=interest, interest_type='Schools'
+                )
+            elif "Top Voices" in my_but.text:
+                self.get_interest_type(
+                    company_list=data_li, interest=interest, interest_type='Top Voices'
+                )
+            elif "Newsletters" in my_but.text:
+                self.get_interest_type(
+                    company_list=data_li, interest=interest, interest_type='Newsletters'
+                )
         self.add_interest(interest)
 
     def get_name_and_location(self):
@@ -392,7 +413,7 @@ class Person(Scraper):
             driver.execute_script(
                 "window.scrollTo(0, Math.ceil(document.body.scrollHeight/1.5));"
             )
-        except:
+        except Exception as e:
             pass
         # get experience
         self.get_experiences()
@@ -426,7 +447,7 @@ class Person(Scraper):
                 ).find_elements(By.TAG_NAME, "li"):
                     accomplishment = Accomplishment(category.text, title.text)
                     self.add_accomplishment(accomplishment)
-        except:
+        except Exception as e:
             pass
         # get connections
         try:
@@ -446,7 +467,7 @@ class Person(Scraper):
 
                     contact = Contact(name=name, occupation=occupation, url=url)
                     self.add_contact(contact)
-        except:
+        except Exception as e:
             connections = None
 
         if close_on_complete:

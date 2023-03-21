@@ -8,6 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 import os
 
+
 def __prompt_email_password():
     u = input("Email: ")
     p = getpass.getpass(prompt="Password: ")
@@ -53,7 +54,7 @@ def login(driver, email=None, password=None, cookie=None, timeout=10):
     try:
         email_elem = driver.find_element(By.ID, "username")
         email_elem.send_keys(email)
-    except:
+    except Exception as e:
         pass
     password_elem = driver.find_element(By.ID, "password")
     password_elem.send_keys(password)
@@ -73,6 +74,7 @@ def login(driver, email=None, password=None, cookie=None, timeout=10):
         else:
             break
     save_cookies(driver)
+
 
 def _login_with_cookie(driver, cookie):
     driver.get("https://www.linkedin.com/login")

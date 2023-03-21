@@ -41,7 +41,7 @@ class PersonSearchScrap(Scraper):
                 # options.add_argument('--disable-gpu')
                 options.add_argument('start-maximized')
                 self.driver = webdriver.Chrome(service=Service(driver_path), chrome_options=options)
-            except:
+            except Exception as e:
                 self.driver = webdriver.Chrome()
 
         if scrape:
@@ -104,7 +104,7 @@ class PersonSearchScrap(Scraper):
                 location = ""
                 try:
                     location = item.find_elements(By.XPATH, 'div')[1].text
-                except:
+                except Exception as e:
                     pass
                 p = PersonSearch(link=link, name=name, description=description, location=location)
                 persons.append(p)
